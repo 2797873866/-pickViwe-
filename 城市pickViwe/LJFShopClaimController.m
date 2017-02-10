@@ -18,13 +18,17 @@
 @property (nonatomic,strong)UITextField * textFueld;
 @property (nonatomic,strong)UITextField * detailLocation;
 
-//省
-@property (nonatomic,strong)NSArray * provinces;
-//市
-@property (nonatomic,strong)NSArray * cites;
-//县
-@property (nonatomic,strong)NSArray * countes;
 
+//全国
+@property (nonatomic,strong)NSArray * provinces;
+
+
+//省
+@property (nonatomic,assign)NSInteger provinyRow;
+//市
+@property (nonatomic,assign)NSInteger  cityRow;
+//县
+@property (nonatomic,assign)NSInteger countyRow;
 
 
 
@@ -161,19 +165,39 @@
 
 
 #pragma mark UIPickerViewDelegate
-- (nullable NSString *)pickerView:(UIPickerView *)pickerView titleForRow:(NSInteger)row forComponent:(NSInteger)component{
+
+- (UIView *)pickerView:(UIPickerView *)pickerView viewForRow:(NSInteger)row forComponent:(NSInteger)component reusingView:(nullable UIView *)view{
+    
+    UILabel * lable = [[UILabel alloc] init];
+    lable.font = [UIFont systemFontOfSize:18];
+    lable.textColor = [UIColor blackColor];
+    lable.textAlignment = NSTextAlignmentCenter;
+    
     if (component ==0) {
-       
+        
         LJFProvinceModle * pM = self.provinces[row];
-        return [NSString stringWithFormat:@"%@",pM.name];
-       }else if (component == 1){
+        lable.text = [NSString stringWithFormat:@"%@",pM.name];
+        
+    }else if (component == 1){
         
         NSInteger twoCom = [pickerView selectedRowInComponent:0];
         LJFProvinceModle * proM = self.provinces[twoCom];
-        LJFProvinceModle * cites = proM.cities[row];
-        return [NSString stringWithFormat:@"%@",cites.name];
+        if (proM.cities.count ==0) {
+            lable.text = @"";
+        }else{
+            if (proM.cities.count <= row) {
+                row = 0;
+            }else if(proM.cities.count == 0){
+                lable.text = @"";
+                return lable;
+            }
+            LJFProvinceModle * cites = proM.cities[row];
+            lable.text = [NSString stringWithFormat:@"%@",cites.name];
+            
+        }
+        
     }else{
-       
+        
         //选种第一组的row
         NSInteger oneCom = [pickerView selectedRowInComponent:0];
         //选种第二组的row
@@ -182,13 +206,25 @@
         LJFProvinceModle * provines = self.provinces[oneCom];
         LJFProvinceModle * cites = provines.cities[twoCom];
         LJFProvinceModle *cuntes = cites.cities[row];
-        return [NSString stringWithFormat:@"%@",cuntes.name];
+        
+        if (provines.cities.count == 0) {
+            lable.text = @"";
+        }else{
+            lable.text = [NSString stringWithFormat:@"%@",cuntes.name];
+        }
     }
+    
+    return lable;
 }
 
 
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component{
    
+    LJFProvinceModle * provinyM ;
+    LJFProvinceModle * cityM ;
+    LJFProvinceModle * countyM ;
+    
+    
     if (component == 0) {
         
         //刷新第二组及第三组数据
@@ -196,38 +232,43 @@
         [pickerView reloadComponent:2];
         [pickerView selectRow:0 inComponent:1 animated:YES];
         [pickerView selectRow:0 inComponent:2 animated:YES];
-       
-        NSInteger oneCom = [pickerView selectedRowInComponent:0];
-        LJFProvinceModle * oneM = self.provinces[oneCom];
-        self.textFueld.text = oneM.name;
-    
+        
+        self.provinyRow = row;
+        provinyM = self.provinces[row];
+        
+        self.textFueld.text = provinyM.name;
+        
+        
     }else if (component == 1){
         
         //刷新第三组数据
         [pickerView reloadComponent:2];
         [pickerView selectRow:0 inComponent:2 animated:YES];
-
-       
-        NSInteger oneCom = [pickerView selectedRowInComponent:0];
-        NSInteger twoCom = [pickerView selectedRowInComponent:1];
-
-        LJFProvinceModle * oneM = self.provinces[oneCom];
-        LJFProvinceModle * twoM = oneM.cities[twoCom];
         
-        NSString * name = [NSString stringWithFormat:@"%@ %@",oneM.name,twoM.name];
+        //取出省
+        provinyM = self.provinces[self.provinyRow];
+        if (provinyM.cities.count < row ) {
+            row = 0;
+        }else if(provinyM.cities.count == 0) {
+            
+            return ;
+        }
+        cityM =provinyM.cities[row];
+        self.cityRow = row;
+        
+        NSString * name = [NSString stringWithFormat:@"%@ %@",provinyM.name,cityM.name];
         self.textFueld.text = name;
         
     }else{
-        NSInteger oneCom = [pickerView selectedRowInComponent:0];
-        NSInteger twoCom = [pickerView selectedRowInComponent:1];
         
-        LJFProvinceModle * oneM = self.provinces[oneCom];
-        LJFProvinceModle * twoM = oneM.cities[twoCom];
-        LJFProvinceModle * threeM = twoM.cities[row];
-        
-        NSString * name = [NSString stringWithFormat:@"%@ %@ %@",oneM.name,twoM.name,threeM.name];
+        if (cityM.cities.count < row) {
+            row = 0;
+        }
+        countyM = cityM.cities[row];
+        NSString * name = [NSString stringWithFormat:@"%@ %@ %@",provinyM.name,cityM.name,countyM.name];
         self.textFueld.text = name;
-     }
+    }
+  
 }
 
 
